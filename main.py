@@ -1,13 +1,15 @@
 import time
 from gothamist import open_gothamist, search, scrape_news_info
 from excel import write_to_excel
+from robocorp.tasks import task
 
 # Constantes
 OUTPUT_DIRECTORY = "C:\\RPA_Challenge\\output\\"
-SEARCH_PHRASE = "Israel"
+SEARCH_PHRASE = "Games"
 MAX_RETRIES = 3
 WAIT_TIME_BETWEEN_RETRIES = 2
 
+@task
 def main():
     # Abrir o navegador
     driver = open_gothamist()
