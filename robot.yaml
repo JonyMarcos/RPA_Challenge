@@ -4,10 +4,6 @@
 tasks:
   main:
     shell: python -m robocorp.tasks run main.py
-  gothmist:
-    shell: python -m robocorp.tasks run gothamist.py
-  excel:
-    shell: python -m robocorp.tasks run excel.py
 
 environmentConfigs:
   - environment_windows_amd64_freeze.yaml
