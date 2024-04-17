@@ -29,7 +29,7 @@ def retry_search(driver, search_phrase):
     return None
 
 @task
-def tasks():
+def main():
     # Get the current directory path
     current_directory = os.path.dirname(__file__)
 
@@ -67,5 +67,5 @@ def tasks():
             write_to_excel(all_news_data, EnvironmentVariables['OUTPUT_DIRECTORY'])
             logger.info("News data written successfully.")
 
-if __name__ == "__tasks__":
-    tasks()
+if __name__ == "__main__":
+    main()

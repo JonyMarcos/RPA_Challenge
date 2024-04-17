@@ -5,6 +5,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
+from robocorp.tasks import task
 import os
 
 # Configure logging
@@ -19,6 +20,7 @@ TITLE_XPATH = "//*[@id='__nuxt']/div/div/main/div[2]/section[1]/div/div[1]/div[2
 DATE_XPATH = "//*[@id='__nuxt']/div/div/main/div[2]/section[1]/div/div[2]/div[1]/div[1]/div[1]/div[2]/div[2]/p"
 IMAGE_XPATH = "//*[@id='__nuxt']/div/div/main/div[2]/section[1]/div/div[2]/div[2]/div[1]/figure/div/div/div/div/img"
 
+@task
 def open_gothamist():
     # Open Gothamist website in a Chrome browser.
     try:
@@ -34,6 +36,7 @@ def open_gothamist():
         logger.error(f"Error opening Gothamist: {e}")
         raise
 
+@task
 def search(driver, search_phrase):
     # Search for a phrase on Gothamist website.
     try:
@@ -54,6 +57,7 @@ def search(driver, search_phrase):
         logger.error("Search box element not found.")
         raise
 
+@task
 def scrape_description(driver):
     # Scrape the description of the first search result.
     try:
@@ -70,6 +74,7 @@ def scrape_description(driver):
         logger.error("Description element not found.")
         raise
 
+@task
 def scrape_news_info(driver, search_phrase):
     # Scrape news information from the first search result.
     try:

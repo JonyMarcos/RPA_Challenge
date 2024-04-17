@@ -1,7 +1,9 @@
 import os
 import datetime
 import openpyxl
+from robocorp.tasks import task
 
+@task
 def get_output_filename():
     # Generate output filename based on current date and time.
     now = datetime.datetime.now()
@@ -9,6 +11,7 @@ def get_output_filename():
     filename = f"excel_output_{timestamp}.xlsx"
     return filename
 
+@task
 def write_to_excel(data, output_dir):
     # Write data to an Excel file.
     filename = get_output_filename()
