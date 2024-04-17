@@ -12,5 +12,5 @@ Chrome WebDriver
 Setup and Usage
 Install the Python dependencies listed in the requirements.txt file.
 Download and set up the Chrome WebDriver.
-Run the tasks.py file to start the automation.
+Run the main.py file to start the automation.
 Check the output Excel file for the results.
