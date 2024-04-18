@@ -11,8 +11,8 @@ dependencies:
   - robocorp-truststore=0.8.0     # https://pypi.org/project/robocorp-truststore/
   - pip:
     - rpaframework==28.5.1        # https://rpaframework.org/releasenotes.html
-    - robocorp==1.6.2             # https://pypi.org/project/robocorp
-    - robocorp-browser==2.2.2     # https://pypi.org/project/robocorp-browser
-    - robocorp-excel==0.4.2       # https://pypi.org/project/robocorp-excel
+    - robocorp==2.0.2             # https://pypi.org/project/robocorp
+    - robocorp-browser==2.3.3     # https://pypi.org/project/robocorp-browser
+    - robocorp-excel==0.4.4       # https://pypi.org/project/robocorp-excel
     - requests==2.31.0            # https://pypi.org/project/requests
     - openpyxl==3.2.0b1           # https://pypi.org/project/openpyxl/

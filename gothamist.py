@@ -60,7 +60,7 @@ def scrape_description(driver):
     # Scrape the description of the first search result.
     try:
         # Wait until the page loads completely
-        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, DESCRIPTION_XPATH)))
+        WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.XPATH, DESCRIPTION_XPATH)))
         # Get the description
         description_element = driver.find_element(By.XPATH, DESCRIPTION_XPATH)
         logger.info("Description scraped successfully.")
@@ -84,7 +84,7 @@ def scrape_news_info(driver, search_phrase):
         first_result.click()
         
         # Check if the element is loaded
-        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, TITLE_XPATH)))
+        WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.XPATH, TITLE_XPATH)))
 
         # Title
         title_element = driver.find_element(By.XPATH, TITLE_XPATH)
