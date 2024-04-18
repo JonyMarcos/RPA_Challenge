@@ -5,7 +5,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
-from robocorp.tasks import task
+from selenium.webdriver.chrome.service import Service
 import os
 
 # Configure logging
@@ -24,9 +24,14 @@ GOTHAMIST_URL = "https://gothamist.com/"
 def open_gothamist():
     # Open Gothamist website in a Chrome browser.
     try:
-        # Initialize Selenium driver
-        driver = webdriver.Chrome()
-        # Maximize the browser window
+       # Set the path to chromedriver.exe in the project root directory
+        chrome_driver_path = os.path.join(os.getcwd(), "chromedriver.exe")
+        
+        # Configure the Chrome driver with the specified executable path
+        service = Service(chrome_driver_path)
+        
+        # Initialize Selenium driver with the configured service
+        driver = webdriver.Chrome(service=service)
         driver.maximize_window()
         # Open Gothamist website
         driver.get(GOTHAMIST_URL)
