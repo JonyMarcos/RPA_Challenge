@@ -19,6 +19,7 @@ DESCRIPTION_XPATH = "//*[@id='resultList']/div[2]/div[1]/div/div[2]/div[2]/p"
 TITLE_XPATH = "//*[@id='__nuxt']/div/div/main/div[2]/section[1]/div/div[1]/div[2]/h1"
 DATE_XPATH = "//*[@id='__nuxt']/div/div/main/div[2]/section[1]/div/div[2]/div[1]/div[1]/div[1]/div[2]/div[2]/p"
 IMAGE_XPATH = "//*[@id='__nuxt']/div/div/main/div[2]/section[1]/div/div[2]/div[2]/div[1]/figure/div/div/div/div/img"
+GOTHAMIST_URL = "https://gothamist.com/"
 
 def open_gothamist():
     # Open Gothamist website in a Chrome browser.
@@ -28,7 +29,7 @@ def open_gothamist():
         # Maximize the browser window
         driver.maximize_window()
         # Open Gothamist website
-        driver.get("https://gothamist.com/")
+        driver.get(GOTHAMIST_URL)
         logger.info("Gothamist opened successfully.")
         return driver
     except Exception as e:

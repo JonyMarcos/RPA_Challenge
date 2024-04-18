@@ -1,16 +1,91 @@
-RPA Challenge 3.0
-This project is an RPA (Robotic Process Automation) automation developed as part of a job application process. It aims to demonstrate automation capabilities by performing specific tasks of web data collection and processing.
+# Web store order processor: multiple work items example
 
-Key Features
-News Search: The automation conducts searches for specific keywords on the Gothamist website.
-Information Collection: Relevant information about news articles, such as title, date, description, and associated image, is extracted.
-Excel Storage: The collected information is stored in an Excel file for easy analysis and visualization.
-Requirements
-Python 3.x
-Python Libraries: Selenium, Openpyxl, among others (see requirements.txt file)
-Chrome WebDriver
-Setup and Usage
-Install the Python dependencies listed in the requirements.txt file.
-Download and set up the Chrome WebDriver.
-Run the main.py file to start the automation.
-Check the output Excel file for the results.
+<img src="images/work-data-management.png" style="margin-bottom:20px">
+
+This robot splits orders by customer from an incoming Excel file. The orders are then handled individually and in parallel. It includes a second version of the consumer task which produces errors, which can be used to demonstrate how the Control Room receives errors from bots.
+
+The robot demonstrates the Work Items feature of Robocorp Control Room:
+
+- Triggering a process with custom payloads (input)
+- Passing data and files between process steps
+- Parallel execution of steps
+- Robot and Control Room [exception handling](https://robocorp.com/docs/development-guide/control-room/work-items#work-item-exception-handling)
+
+> We recommended checking out the article "[Using work items](https://robocorp.com/docs/development-guide/control-room/data-pipeline)" before diving in.
+
+## Tasks
+
+The robot is split into two tasks, meant to run as separate steps. The first task generates (produces) data, and the second one reads (consumes) and processes that data. A bonus task exists which can be used to mock Control Room and Robot error handling.
+
+> [Producer-consumer](https://en.wikipedia.org/wiki/Producer%E2%80%93consumer_problem), Wikipedia.
+
+### The first task (the producer)
+
+- Reads an Excel file from the work item
+- Splits it into orders by customer
+- Creates a new work item for each order
+
+### The second task (the consumer)
+
+- Logs in to the web store
+- Reads the products in the order from the work item
+  - Loops through work items to avoid time spent logging in per each work item.
+- Orders the products
+
+### The bonus task (error mocking)
+
+- Produces errors during the same actions as the consumer.
+  - Some error will be retried by the bot internally.
+  - Some errors will cause the run to fail after work items are already released (therefore the work item will still complete).
+  - Some errors will be reported at the Control Room level with appropriate codes and messages.
+- You can automatically retry errors with the [Retry Bot in the Portal](https://robocorp.com/portal/robot/robocorp/example-retry-work-item-bot).
+
+## Excel input file
+
+The first task expects an [Excel file](https://github.com/robocorp/example-web-store-work-items/raw/master/devdata/work-items-in/split-orders-file-test-input/orders.xlsx) in a specific format:
+
+| Name          | Item                     | Zip  |
+| ------------- | ------------------------ | ---- |
+| Sol Heaton    | Sauce Labs Bolt T-Shirt  | 3695 |
+| Gregg Arroyo  | Sauce Labs Onesie        | 4418 |
+| Zoya Roche    | Sauce Labs Bolt T-Shirt  | 3013 |
+| Gregg Arroyo  | Sauce Labs Bolt T-Shirt  | 4418 |
+| Camden Martin | Sauce Labs Bolt T-Shirt  | 1196 |
+| Zoya Roche    | Sauce Labs Fleece Jacket | 3013 |
+| Zoya Roche    | Sauce Labs Onesie        | 3013 |
+| Sol Heaton    | Sauce Labs Fleece Jacket | 3695 |
+| Sol Heaton    | Sauce Labs Onesee        | 3695 |
+
+But, you can run this as a demo by supplying no item to the Control Room. The robot will use the default input used in testing and linked above.
+
+## Local development
+
+When running in **Control Room**, the work items will be automatically managed and passed between steps in the process. However, when running locally, the work items can be simulated using folder structure and JSON files.
+
+### VsCode
+
+[Robocorp VsCode extensions](https://robocorp.com/docs/developer-tools/visual-studio-code/overview) has built-in support making the use and testing of work items more straightforward.
+
+Using VsCode, you should only need [this guide](https://robocorp.com/docs/developer-tools/visual-studio-code/extension-features#using-work-items)
+
+### RCC from CLI
+
+As each task in the robot expects different work item input, we need a way to control this.
+
+This example includes test inputs, one for each task in the process:
+
+- For task `Split orders file`:
+  - `./devdata/work-items-in/split-orders-file-test-input/work-items.json`
+- For task `Load and Process All Orders`:
+  - `./devdata/work-items-in/process-orders-test-from-outputs/work-items.json`
+
+To run specific tasks with specific inputs in the command-line you can run the following commands:
+
+- Run `Split orders file` with test input:
+  - `rcc task run -t "Split orders file" -e ./devdata/env-split-orders.json`
+- Run `Load and Process All Orders` with test input:
+  - `rcc task run -t "Load and Process All Orders" -e ./devdata/env-process-orders.json`
+
+## Control room setup
+
+To see how to set up Control Room and understand more about how work items are used, see the following article: [Using work items](https://robocorp.com/docs/development-guide/control-room/data-pipeline).
