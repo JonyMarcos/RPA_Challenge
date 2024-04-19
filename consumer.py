@@ -22,12 +22,12 @@ EnvironmentVariables = storage.get_json('EnvironmentVariables')
 OUTPUT_DIRECTORY = os.path.join(CURRENT_DIRECTORY, "output")
 
 
-def retry_search(driver, search_phrase):
+def retry_search(browser, search_phrase):
     """
     Retry search operation multiple times in case of failure.
 
     Args:
-        driver: WebDriver instance.
+        browser: WebDriver instance.
         search_phrase: Phrase to search.
 
     Returns:
@@ -35,8 +35,8 @@ def retry_search(driver, search_phrase):
     """
     for retry in range(EnvironmentVariables.get('MAX_RETRIES', 3)):
         try:
-            if search(driver, search_phrase):
-                news_data = scrape_news_info(driver, search_phrase)
+            if search(browser, search_phrase):
+                news_data = scrape_news_info(browser, search_phrase)
                 if news_data:
                     return news_data
         except Exception as e:
@@ -58,13 +58,13 @@ def process_item(item):
         List of news data.
     """
     all_news_data = []
-    driver = open_gothamist()
+    browser = open_gothamist()
 
     try:
         search_phrases = item.payload.get('Name', [])
         for search_phrase in search_phrases:
             logger.info("Searching for: %s", search_phrase)
-            news_data = retry_search(driver, search_phrase)
+            news_data = retry_search(browser, search_phrase)
             if news_data:
                 all_news_data.append(news_data)
     except Exception as e:
@@ -72,7 +72,7 @@ def process_item(item):
     finally:
         try:
             logger.info("Closing the browser...")
-            driver.quit()
+            browser.quit()
         except Exception as e:
             logger.error(f"Error closing the browser: {e}")
 
