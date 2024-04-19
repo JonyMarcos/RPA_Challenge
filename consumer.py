@@ -21,6 +21,7 @@ EnvironmentVariables = storage.get_json('EnvironmentVariables')
 # Output directory
 OUTPUT_DIRECTORY = os.path.join(CURRENT_DIRECTORY, "output")
 
+
 def retry_search(driver, search_phrase):
     """
     Retry search operation multiple times in case of failure.
@@ -32,7 +33,7 @@ def retry_search(driver, search_phrase):
     Returns:
         Data if search is successful, None otherwise.
     """
-    for retry in range(EnvironmentVariables['MAX_RETRIES']):
+    for retry in range(EnvironmentVariables.get('MAX_RETRIES', 3)):
         try:
             if search(driver, search_phrase):
                 news_data = scrape_news_info(driver, search_phrase)
@@ -42,8 +43,9 @@ def retry_search(driver, search_phrase):
             logger.error(f"Exception caught: {e}. Retrying...")
 
             # Wait before retrying
-            time.sleep(EnvironmentVariables['WAIT_TIME_BETWEEN_RETRIES'])
+            time.sleep(EnvironmentVariables.get('WAIT_TIME_BETWEEN_RETRIES', 2))
     return None
+
 
 def process_item(item):
     """
@@ -59,7 +61,7 @@ def process_item(item):
     driver = open_gothamist()
 
     try:
-        search_phrases = item.payload['Name']
+        search_phrases = item.payload.get('Name', [])
         for search_phrase in search_phrases:
             logger.info("Searching for: %s", search_phrase)
             news_data = retry_search(driver, search_phrase)
@@ -76,6 +78,7 @@ def process_item(item):
 
     return all_news_data
 
+
 @task
 def load_and_process_all():
     """
@@ -88,11 +91,12 @@ def load_and_process_all():
                 logger.info("Writing news data to Excel...")
                 write_to_excel(all_news_data, OUTPUT_DIRECTORY)
                 logger.info("News data written successfully.")
-                
+
                 # Mark the work item as done
                 item.done()
     except Exception as e:
         logger.error(f"Error processing work items: {e}")
+
 
 if __name__ == "__main__":
     load_and_process_all()

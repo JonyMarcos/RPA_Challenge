@@ -1,121 +1,101 @@
 import logging
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, NoSuchElementException
-from selenium.webdriver.chrome.service import Service
-import os
+import re
+from RPA.Browser.Selenium import Selenium
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Constants
-SEARCH_BOX_XPATH = "//*[@id='search']/input"
-FIRST_RESULT_XPATH = "//*[@id='resultList']/div[2]/div[1]/div/div[2]/div[1]/a/div"
-DESCRIPTION_XPATH = "//*[@id='resultList']/div[2]/div[1]/div/div[2]/div[2]/p"
-TITLE_XPATH = "//*[@id='__nuxt']/div/div/main/div[2]/section[1]/div/div[1]/div[2]/h1"
-DATE_XPATH = "//*[@id='__nuxt']/div/div/main/div[2]/section[1]/div/div[2]/div[1]/div[1]/div[1]/div[2]/div[2]/p"
-IMAGE_XPATH = "//*[@id='__nuxt']/div/div/main/div[2]/section[1]/div/div[2]/div[2]/div[1]/figure/div/div/div/div/img"
 GOTHAMIST_URL = "https://gothamist.com/"
+ICON_BUTTON = "//span[contains(@class, 'pi-search')]"
+SEARCH_BOX = "//input[@class='search-page-input']"
+FIRST_RESULT_CLASS = "(//div[@class='h2'])[1]"
+DESCRIPTION_CLASS = "(//p[@class='desc'])[1]"
+TITLE_CLASS = "(//h1[@class='mt-4 mb-3 h2'])[1]"
+DATE_CLASS = "(//p[@class='type-caption'])[1]"
+IMAGE_CLASS = "(//div[@class='image-with-caption-image'])[1]"
 
 def open_gothamist():
-    # Open Gothamist website in a Chrome browser.
+    """Opens the Gothamist website."""
     try:
-       # Initialize Selenium driver
-        driver = webdriver.Chrome()
-        # Maximize the browser window
-        driver.maximize_window()
-        # Open Gothamist website
-        driver.get(GOTHAMIST_URL)
+        browser = Selenium()
+        browser.open_available_browser(GOTHAMIST_URL)
+        browser.maximize_browser_window()
         logger.info("Gothamist opened successfully.")
-        return driver
+        return browser
     except Exception as e:
         logger.error(f"Error opening Gothamist: {e}")
         raise
 
-def search(driver, search_phrase):
-    # Search for a phrase on Gothamist website.
+def search(browser, search_phrase):
+    """Performs a search on the Gothamist website."""
     try:
-        # Insert the search phrase, if provided
         if search_phrase:
-            icon_button = driver.find_element(By.XPATH, "//*[@id='__nuxt']/div/div/main/header/div[1]/div[2]/div[2]/button/span[1]")
-            icon_button.click()
-            # Wait for the search box to be present on the page
-            search_box = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, SEARCH_BOX_XPATH)))
-            search_box.send_keys(search_phrase)
-            search_box.send_keys(Keys.RETURN)
+            # Click the icon
+            browser.click_element(ICON_BUTTON)
+            # Wait until search box is visible
+            browser.wait_until_element_is_visible(SEARCH_BOX)
+            # Click search phrase
+            browser.click_element(SEARCH_BOX)
+            # Input search phrase
+            browser.input_text(SEARCH_BOX, search_phrase)
+            # Press Enter
+            browser.press_keys(SEARCH_BOX, "RETURN")
+            # Wait until search results are visible
+            browser.wait_until_element_is_visible(FIRST_RESULT_CLASS)
             logger.info(f"Search for '{search_phrase}' successful.")
             return True
-    except TimeoutException:
-        logger.error("Timeout while searching.")
-        raise
-    except NoSuchElementException:
-        logger.error("Search box element not found.")
+    except Exception as e:
+        logger.error(f"Error while searching: {e}")
         raise
 
-def scrape_description(driver):
-    # Scrape the description of the first search result.
+def scrape_description(browser):
+    """Scrapes the description from the search results."""
     try:
-        # Wait until the page loads completely
-        WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.XPATH, DESCRIPTION_XPATH)))
-        # Get the description
-        description_element = driver.find_element(By.XPATH, DESCRIPTION_XPATH)
-        logger.info("Description scraped successfully.")
-        return description_element.text
-    except TimeoutException:
-        logger.error("Timeout while scraping description.")
-        raise
-    except NoSuchElementException:
-        logger.error("Description element not found.")
+        # Get the description text
+        description_element = browser.find_elements(DESCRIPTION_CLASS)
+        if description_element:
+            description = description_element[0].text
+            logger.info("Description scraped successfully.")
+            return description
+        else:
+            logger.warning("No description found.")
+            return None
+    except Exception as e:
+        logger.error(f"Error while scraping description: {e}")
         raise
 
-def scrape_news_info(driver, search_phrase):
-    # Scrape news information from the first search result.
+def scrape_news_info(browser, search_phrase):
+    """Scrapes news information from the first search result."""
     try:
         # Get the description before clicking on the first result
-        description = scrape_description(driver)
-        if not description:
-            raise Exception("No description found.")
+        description = scrape_description(browser)
+
         # Click on the first result
-        first_result = driver.find_element(By.XPATH, FIRST_RESULT_XPATH)
+        first_result = browser.find_element(FIRST_RESULT_CLASS)
         first_result.click()
-        
-        # Check if the element is loaded
-        WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.XPATH, TITLE_XPATH)))
 
-        # Title
-        title_element = driver.find_element(By.XPATH, TITLE_XPATH)
-        title = title_element.text
+        # Wait for elements to load
+        browser.wait_until_element_is_visible(TITLE_CLASS)
 
-        # Date
-        date_element = driver.find_element(By.XPATH, DATE_XPATH)
-        date = date_element.text
-
-        # Image URL
-        image_element = driver.find_element(By.XPATH, IMAGE_XPATH)
-        image_url = image_element.get_attribute("src")
+        # Extract information
+        title = browser.get_text(TITLE_CLASS)
+        date = browser.get_text(DATE_CLASS)
+        image_url = browser.get_element_attribute(IMAGE_CLASS, "src")
 
         # Count of search phrases in title and description
         title_search_count = title.lower().count(search_phrase.lower())
         description_search_count = description.lower().count(search_phrase.lower())
 
-        # True or False, depending on whether the title or description contains any monetary value
-        money_keywords = ["$", "dollars", "USD"]
-        title_contains_money = any(keyword in title.lower() for keyword in money_keywords)
-        description_contains_money = any(keyword in description.lower() for keyword in money_keywords)
+        # Check for monetary symbols using regular expressions
+        money_keywords = ["\$", "dollars", "USD"]
+        title_contains_money = any(re.search(r'\b{}\b'.format(keyword), title, re.IGNORECASE) for keyword in money_keywords)
+        description_contains_money = any(re.search(r'\b{}\b'.format(keyword), description, re.IGNORECASE) for keyword in money_keywords)
 
         # Return the results
         logger.info("News info scraped successfully.")
         return search_phrase, title, date, description, image_url, title_search_count, description_search_count, title_contains_money, description_contains_money
-    except TimeoutException:
-        logger.error("Timeout while scraping news info.")
-        raise
-    except NoSuchElementException:
-        logger.error("News info element not found.")
-        raise
     except Exception as e:
-        logger.error(f"Business exception: {e}")
+        logger.error(f"Error while scraping news info: {e}")
         raise
