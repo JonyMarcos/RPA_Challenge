@@ -7,6 +7,9 @@ from robocorp import storage
 from robocorp import workitems
 from robocorp.workitems import Input
 from robocorp.tasks import task
+from RPA.Robocorp.Process import Process
+from RPA.Robocorp.Vault import Vault
+from RPA.Browser.Selenium import Selenium
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -47,6 +50,7 @@ def retry_search(browser, search_phrase):
     return None
 
 
+
 def process_item(item):
     """
     Process each item.
@@ -61,6 +65,9 @@ def process_item(item):
     browser = open_gothamist()
 
     try:
+        logger.info("Payload type: %s", type(item.payload))
+        logger.info("Payload content: %s", item.payload)
+        
         search_phrases = item.payload.get('Name', [])
         for search_phrase in search_phrases:
             logger.info("Searching for: %s", search_phrase)
@@ -72,7 +79,7 @@ def process_item(item):
     finally:
         try:
             logger.info("Closing the browser...")
-            browser.quit()
+            browser.close_all_browsers()
         except Exception as e:
             logger.error(f"Error closing the browser: {e}")
 
@@ -87,6 +94,7 @@ def load_and_process_all():
     try:
         for item in workitems.inputs:
             all_news_data = process_item(item)
+            print("Received payload:", item.payload)
             if all_news_data:
                 logger.info("Writing news data to Excel...")
                 write_to_excel(all_news_data, OUTPUT_DIRECTORY)
