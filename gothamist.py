@@ -33,7 +33,7 @@ def open_gothamist():
         logger.error(f"Error opening Gothamist: {e}")
         raise
 
-def download_and_save_image(image_url, output_dir, title):
+def download_and_save_image(image_url, output_dir, search_phrase):
     try:
         # Extrair o nome do arquivo e a extensão da URL da imagem
         parsed_url = urlparse(image_url)
@@ -43,7 +43,7 @@ def download_and_save_image(image_url, output_dir, title):
         # Construir o caminho completo para salvar o arquivo na pasta de saída
         output_dir = os.path.join(output_dir, "img")  # Adicionado "img" ao caminho
         os.makedirs(output_dir, exist_ok=True)  # Criar diretório se não existir
-        output_path = os.path.join(output_dir, f"{title}_{filename}.webp")  # Adicionada extensão .webp
+        output_path = os.path.join(output_dir, f"img_{search_phrase}.webp")  # Adicionada extensão .webp
 
         # Baixar a imagem
         response = requests.get(image_url)
@@ -57,7 +57,7 @@ def download_and_save_image(image_url, output_dir, title):
     except Exception as e:
         logger.error(f"Error downloading or saving image: {e}")
         return None
-    
+
 def search(browser, search_phrase):
     """Performs a search on the Gothamist website."""
     try:
@@ -114,7 +114,7 @@ def scrape_news_info(browser, search_phrase):
         date = browser.get_text(DATE_CLASS)
         image_url = browser.get_element_attribute(IMAGE_CLASS, "src")
         # Baixar e salvar a imagem
-        image_path = download_and_save_image(image_url, IMG_DIRECTORY, title)
+        image_path = download_and_save_image(image_url, IMG_DIRECTORY, search_phrase)
 
         # Count of search phrases in title and description
         title_search_count = title.lower().count(search_phrase.lower())

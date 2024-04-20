@@ -11,7 +11,7 @@ from robocorp.tasks import task
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Current directory where the Python script is located
+# Current directory where o script Python está localizado
 CURRENT_DIRECTORY = os.path.dirname(os.path.realpath(__file__))
 
 # Load environment variables
@@ -46,7 +46,6 @@ def retry_search(browser, search_phrase):
     return None
 
 
-
 def process_item(item):
     """
     Process each item.
@@ -62,7 +61,7 @@ def process_item(item):
 
     try:
         payload = item.payload
-        search_phrases = payload['Name'] if 'Name' in payload else []
+        search_phrases = payload.get('Name', [])
         if isinstance(search_phrases, list):  # Check if payload['Name'] is a list
             for search_phrase in search_phrases:
                 logger.info("Searching for: %s", search_phrase)
@@ -91,14 +90,20 @@ def load_and_process_all():
     try:
         for item in workitems.inputs:
             all_news_data = process_item(item)
-            print("Received payload:", item.payload)
+            logger.info("Received payload: %s", item.payload)
             if all_news_data:
                 logger.info("Writing news data to Excel...")
                 write_to_excel(all_news_data, OUTPUT_DIRECTORY)
                 logger.info("News data written successfully.")
-
                 # Mark the work item as done
                 item.done()
+            else:
+                logger.warning("No news data found for item: %s", item.id)
+                item.fail(
+                    exception_type='APPLICATION',
+                    code='NO_NEWS_DATA',
+                    message='No news data found'
+                )
     except Exception as e:
         logger.error(f"Error processing work items: {e}")
 
