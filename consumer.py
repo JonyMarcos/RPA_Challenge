@@ -68,12 +68,17 @@ def process_item(item):
         logger.info("Payload type: %s", type(item.payload))
         logger.info("Payload content: %s", item.payload)
         
-        search_phrases = item.payload.get('Name', [])
-        for search_phrase in search_phrases:
-            logger.info("Searching for: %s", search_phrase)
-            news_data = retry_search(browser, search_phrase)
-            if news_data:
-                all_news_data.append(news_data)
+        # Check if payload is a list of dictionaries
+        if isinstance(item.payload, list) and item.payload:
+            payload_data = item.payload[0]  # Assuming only one dictionary in the list
+            search_phrases = payload_data.get('Name', [])
+            for search_phrase in search_phrases:
+                logger.info("Searching for: %s", search_phrase)
+                news_data = retry_search(browser, search_phrase)
+                if news_data:
+                    all_news_data.append(news_data)
+        else:
+            logger.error("Invalid payload format: %s", item.payload)
     except Exception as e:
         logger.error(f"Error processing item: {e}")
     finally:
