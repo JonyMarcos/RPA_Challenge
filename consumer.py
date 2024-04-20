@@ -5,11 +5,7 @@ from gothamist import open_gothamist, search, scrape_news_info
 from excel import write_to_excel
 from robocorp import storage
 from robocorp import workitems
-from robocorp.workitems import Input
 from robocorp.tasks import task
-from RPA.Robocorp.Process import Process
-from RPA.Robocorp.Vault import Vault
-from RPA.Browser.Selenium import Selenium
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -65,20 +61,16 @@ def process_item(item):
     browser = open_gothamist()
 
     try:
-        logger.info("Payload type: %s", type(item.payload))
-        logger.info("Payload content: %s", item.payload)
-        
-        # Check if payload is a list of dictionaries
-        if isinstance(item.payload, list) and item.payload:
-            payload_data = item.payload[0]  # Assuming only one dictionary in the list
-            search_phrases = payload_data.get('Name', [])
+        payload = item.payload
+        search_phrases = payload['Name'] if 'Name' in payload else []
+        if isinstance(search_phrases, list):  # Check if payload['Name'] is a list
             for search_phrase in search_phrases:
                 logger.info("Searching for: %s", search_phrase)
                 news_data = retry_search(browser, search_phrase)
                 if news_data:
                     all_news_data.append(news_data)
         else:
-            logger.error("Invalid payload format: %s", item.payload)
+            logger.error("Invalid payload format: %s", payload)
     except Exception as e:
         logger.error(f"Error processing item: {e}")
     finally:
