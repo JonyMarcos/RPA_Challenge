@@ -61,13 +61,16 @@ def process_item(item):
 
     try:
         payload = item.payload
-        search_phrases = payload.get('Name', [])
-        if isinstance(search_phrases, list):  # Check if payload['Name'] is a list
-            for search_phrase in search_phrases:
-                logger.info("Searching for: %s", search_phrase)
-                news_data = retry_search(browser, search_phrase)
-                if news_data:
-                    all_news_data.append(news_data)
+        if isinstance(payload, dict):  # Check if payload is a dictionary
+            search_phrases = payload.get('Name', [])
+            if isinstance(search_phrases, list):  # Check if payload['Name'] is a list
+                for search_phrase in search_phrases:
+                    logger.info("Searching for: %s", search_phrase)
+                    news_data = retry_search(browser, search_phrase)
+                    if news_data:
+                        all_news_data.append(news_data)
+            else:
+                logger.error("Invalid payload format: %s", payload)
         else:
             logger.error("Invalid payload format: %s", payload)
     except Exception as e:
