@@ -11,7 +11,7 @@ from robocorp.tasks import task
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Current directory where o script Python está localizado
+# Current directory where the Python script is located
 CURRENT_DIRECTORY = os.path.dirname(os.path.realpath(__file__))
 
 # Load environment variables
@@ -40,7 +40,7 @@ def retry_search(browser, search_phrase):
                     return news_data
         except Exception as e:
             logger.error(f"Exception caught: {e}. Retrying...")
-
+            browser.capture_page_screenshot(os.path.join(OUTPUT_DIRECTORY, f"error_screenshot_{search_phrase}_retry_{retry}.png"))
             # Wait before retrying
             time.sleep(EnvironmentVariables.get('WAIT_TIME_BETWEEN_RETRIES', 2))
     return None

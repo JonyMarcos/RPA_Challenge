@@ -1,6 +1,6 @@
 import logging
-import re
 import os
+import re
 import requests
 from urllib.parse import urlparse
 from RPA.Browser.Selenium import Selenium
@@ -11,13 +11,14 @@ logger = logging.getLogger(__name__)
 
 # Constants
 GOTHAMIST_URL = "https://gothamist.com/"
-ICON_BUTTON = "//span[contains(@class, 'pi-search')]"
+ICON_BUTTON = "//button[@aria-label='Go to search page']"
 SEARCH_BOX = "//input[@class='search-page-input']"
 FIRST_RESULT_CLASS = "(//div[@class='h2'])[1]"
 DESCRIPTION_CLASS = "(//p[@class='desc'])[1]"
 TITLE_CLASS = "(//h1[@class='mt-4 mb-3 h2'])[1]"
 DATE_CLASS = "(//p[@class='type-caption'])[1]"
 IMAGE_CLASS = "//*[@id='__nuxt']/div/div/main/div[2]/section[1]/div/div[2]/div[2]/div[1]/figure/div/div/div/div/img"
+OVERLAY_ELEMENT = "//div[@class='fc-consent-root']//button[@aria-label='Consent']//p[@class='fc-button-label' and text()='Consent']"
 
 IMG_DIRECTORY = "./output/"
 
@@ -27,6 +28,7 @@ def open_gothamist():
         browser = Selenium()
         browser.open_available_browser(GOTHAMIST_URL)
         browser.maximize_browser_window()
+        browser.wait_until_page_contains_element(ICON_BUTTON)
         logger.info("Gothamist opened successfully.")
         return browser
     except Exception as e:
@@ -35,23 +37,24 @@ def open_gothamist():
 
 def download_and_save_image(image_url, output_dir, search_phrase):
     try:
-        # Extrair o nome do arquivo e a extensão da URL da imagem
+        # Extract file name and extension from image URL
         parsed_url = urlparse(image_url)
         image_filename = os.path.basename(parsed_url.path)
         filename, _ = os.path.splitext(image_filename)
 
-        # Construir o caminho completo para salvar o arquivo na pasta de saída
-        output_dir = os.path.join(output_dir, "img")  # Adicionado "img" ao caminho
-        os.makedirs(output_dir, exist_ok=True)  # Criar diretório se não existir
-        output_path = os.path.join(output_dir, f"img_{search_phrase}.webp")  # Adicionada extensão .webp
+        # Build full path to save the file in the output folder  
+        os.makedirs(output_dir, exist_ok=True)  
+        output_path = os.path.join(output_dir, f"img_search_{search_phrase}.webp")  
 
-        # Baixar a imagem
+        # Download the image
         response = requests.get(image_url)
         response.raise_for_status()
 
-        # Salvar a imagem no caminho especificado
+        # Save the image at the specified path
         with open(output_path, "wb") as file:
             file.write(response.content)
+
+        logger.info(f"Image downloaded successfully: {output_path}")
 
         return output_path
     except Exception as e:
@@ -62,17 +65,27 @@ def search(browser, search_phrase):
     """Performs a search on the Gothamist website."""
     try:
         if search_phrase:
-            # Click the icon
+            # Attempt to click on the consent button if present
+            if browser.is_element_visible(OVERLAY_ELEMENT):
+                consent_button = browser.find_element(OVERLAY_ELEMENT)
+                consent_button.click()
+                logger.info("Consent button clicked.")
+            else:
+                logger.info("Consent button not found. Continuing with search.")
+
+            # Click on the search icon
             browser.click_element(ICON_BUTTON)
-            # Wait until search box is visible
+            # Wait until the overlay element is no longer present on the page
+            browser.wait_until_page_does_not_contain_element(OVERLAY_ELEMENT)
+            # Wait until the search box is visible
             browser.wait_until_element_is_visible(SEARCH_BOX)
-            # Click search phrase
+            # Click on the search box
             browser.click_element(SEARCH_BOX)
-            # Input search phrase
+            # Input the search phrase
             browser.input_text(SEARCH_BOX, search_phrase)
-            # Press Enter
+            # Press Enter to start the search
             browser.press_keys(SEARCH_BOX, "RETURN")
-            # Wait until search results are visible
+            # Wait until the first search result is visible
             browser.wait_until_element_is_visible(FIRST_RESULT_CLASS, 10)
             logger.info(f"Search for '{search_phrase}' successful.")
             return True
@@ -80,10 +93,10 @@ def search(browser, search_phrase):
         logger.error(f"Error while searching: {e}")
         raise
 
+
 def scrape_description(browser):
     """Scrapes the description from the search results."""
     try:
-        # Get the description text
         description_element = browser.find_elements(DESCRIPTION_CLASS)
         if description_element:
             description = description_element[0].text
@@ -99,46 +112,25 @@ def scrape_description(browser):
 def scrape_news_info(browser, search_phrase):
     """Scrapes news information from the first search result."""
     try:
-        # Get the description before clicking on the first result
         description = scrape_description(browser)
-
-        # Click on the first result
         first_result = browser.find_element(FIRST_RESULT_CLASS)
         first_result.click()
-
-        # Wait for elements to load
         browser.wait_until_element_is_visible(TITLE_CLASS, 10)
 
-        # Extract information
         title = browser.get_text(TITLE_CLASS)
         date = browser.get_text(DATE_CLASS)
         image_url = browser.get_element_attribute(IMAGE_CLASS, "src")
-        # Baixar e salvar a imagem
         image_path = download_and_save_image(image_url, IMG_DIRECTORY, search_phrase)
 
-        # Count of search phrases in title and description
         title_search_count = title.lower().count(search_phrase.lower())
         description_search_count = description.lower().count(search_phrase.lower())
 
-        # Check for monetary symbols using regular expressions
         money_keywords = ["\$", "dollars", "USD"]
         title_contains_money = any(re.search(r'\b{}\b'.format(keyword), title, re.IGNORECASE) for keyword in money_keywords)
         description_contains_money = any(re.search(r'\b{}\b'.format(keyword), description, re.IGNORECASE) for keyword in money_keywords)
 
-        # Return the results
         logger.info("News info scraped successfully.")
         return search_phrase, title, date, description, image_url, title_search_count, description_search_count, title_contains_money, description_contains_money
     except Exception as e:
         logger.error(f"Error while scraping news info: {e}")
         raise
-
-if __name__ == "__main__":
-    try:
-        browser = open_gothamist()
-        search_phrase = "NBA"
-        search(browser, search_phrase)
-        scrape_description(browser)
-        scrape_news_info(browser, search_phrase)
-        browser.close_all_browsers()
-    except Exception as e:
-        logger.error(f"Error: {e}")
