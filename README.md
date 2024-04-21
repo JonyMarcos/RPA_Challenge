@@ -29,7 +29,7 @@ This Robotic Process Automation (RPA) project was developed as part of a selecti
    python producer.py
 6. After successful execution of `producer.py`, run the `consumer.py` script to process the data:
   python consumer.py
-7. The RPA will fetch the latest news articles for each search phrase and store the extracted data in an Excel file named `output.xlsx` in the `output` directory.
+7. The RPA will fetch the latest news articles for each search phrase and store the extracted data in an Excel file named `gothamist_news_data.xlsx` in the `output` directory.
 
 ## Known Issues
 - Currently, the RPA can only be executed locally due to limitations in direct execution on the Robocorp platform. Efforts are underway to address this issue.
