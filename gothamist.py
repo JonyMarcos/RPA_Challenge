@@ -1,17 +1,29 @@
 import logging
+import time
 import os
 import re
 import requests
 from urllib.parse import urlparse
+from robocorp import storage
 from RPA.Browser.Selenium import Selenium
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Load environment variables
+EnvironmentVariables = storage.get_json('EnvironmentVariables')
+
+# Current directory where the Python script is located
+CURRENT_DIRECTORY = os.path.dirname(os.path.realpath(__file__))
+
+# Output directory
+OUTPUT_DIRECTORY = os.path.join(CURRENT_DIRECTORY, "output")
+
 # Constants
 GOTHAMIST_URL = "https://gothamist.com/"
 ICON_BUTTON = "//button[@aria-label='Go to search page']"
+RESULTS_CONTAINER = "//div[@class='search-page-results pt-2']"
 SEARCH_BOX = "//input[@class='search-page-input']"
 FIRST_RESULT_CLASS = "(//div[@class='h2'])[1]"
 DESCRIPTION_CLASS = "(//p[@class='desc'])[1]"
@@ -61,7 +73,7 @@ def download_and_save_image(image_url, output_dir, search_phrase):
         logger.error(f"Error downloading or saving image: {e}")
         return None
 
-def search(browser, search_phrase):
+def search(browser, search_phrase, retry):
     """Performs a search on the Gothamist website."""
     try:
         if search_phrase:
@@ -79,19 +91,37 @@ def search(browser, search_phrase):
             browser.wait_until_page_does_not_contain_element(OVERLAY_ELEMENT)
             # Wait until the search box is visible
             browser.wait_until_element_is_visible(SEARCH_BOX)
+            # Clear the content of the search box
+            browser.clear_element_text(SEARCH_BOX)
             # Click on the search box
             browser.click_element(SEARCH_BOX)
             # Input the search phrase
             browser.input_text(SEARCH_BOX, search_phrase)
             # Press Enter to start the search
             browser.press_keys(SEARCH_BOX, "RETURN")
-            # Wait until the first search result is visible
-            browser.wait_until_element_is_visible(FIRST_RESULT_CLASS, 10)
-            logger.info(f"Search for '{search_phrase}' successful.")
-            return True
+            # Wait until the search results container is visible
+            browser.wait_until_element_is_visible(RESULTS_CONTAINER)
+            # Get the search results count
+            results_count_element = browser.find_element(RESULTS_CONTAINER)
+            results_count_text = results_count_element.text.strip()
+            results_count = int(results_count_text.split()[0])
+            if results_count > 0:
+                # Wait until the first search result is visible
+                browser.wait_until_element_is_visible(FIRST_RESULT_CLASS, 10)
+                logger.info(f"Search for '{search_phrase}' successful.")
+                return True
+            elif retry == 3:
+                logger.info(f"No results found for '{search_phrase}'. Taking screenshot...")
+                browser.capture_page_screenshot(os.path.join(OUTPUT_DIRECTORY, f"no_results_{search_phrase}.png"))
+                return False
+            else:
+                logger.info(f"No results found for '{search_phrase}'.")
+                return False
     except Exception as e:
         logger.error(f"Error while searching: {e}")
         raise
+
+
 
 
 def scrape_description(browser):

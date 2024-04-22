@@ -34,7 +34,7 @@ def retry_search(browser, search_phrase):
     """
     for retry in range(EnvironmentVariables.get('MAX_RETRIES', 3)):
         try:
-            if search(browser, search_phrase):
+            if search(browser, search_phrase, retry + 1):  # Adicionando o número da tentativa
                 news_data = scrape_news_info(browser, search_phrase)
                 if news_data:
                     return news_data
