@@ -99,6 +99,8 @@ def search(browser, search_phrase, retry):
             browser.input_text(SEARCH_BOX, search_phrase)
             # Press Enter to start the search
             browser.press_keys(SEARCH_BOX, "RETURN")
+            # Wait
+            time.sleep(5)
             # Wait until the search results container is visible
             browser.wait_until_element_is_visible(RESULTS_CONTAINER)
             # Get the search results count
