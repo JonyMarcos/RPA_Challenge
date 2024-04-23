@@ -2,10 +2,8 @@
 # https://github.com/robocorp/rcc/blob/master/docs/recipes.md#what-is-in-robotyaml
 
 tasks:
-  Producer:
-    shell: python -m robocorp.tasks run producer.py
-  consumer:
-    shell: python -m robocorp.tasks run consumer.py
+  Task:
+    shell: python -m robocorp.tasks run task.py
 
 environmentConfigs:
   - environment_windows_amd64_freeze.yaml

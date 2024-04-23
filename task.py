@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 CURRENT_DIRECTORY = os.path.dirname(os.path.realpath(__file__))
 
 # Load environment variables
-EnvironmentVariables = storage.get_json('EnvironmentVariables')
+EnvironmentVariables = storage.get_json("EnvironmentVariables")
 
 # Output directory
 OUTPUT_DIRECTORY = os.path.join(CURRENT_DIRECTORY, "output")
@@ -32,16 +32,16 @@ def retry_search(scraper, search_phrase):
     Returns:
         Data if search is successful, None otherwise.
     """
-    for retry in range(EnvironmentVariables.get('MAX_RETRIES', 3)):
+    for retry in range(EnvironmentVariables.get("MAX_RETRIES", 3)):
         try:
-            if scraper.search(search_phrase, retry + 1):  # Adding the retry number
+            if scraper.search(search_phrase, retry + 1):
                 news_data = scraper.scrape_news_info(search_phrase)
                 if news_data:
                     return news_data
         except Exception as e:
             logger.error(f"Exception caught: {e}. Retrying...")
             # Wait before retrying
-            time.sleep(EnvironmentVariables.get('WAIT_TIME_BETWEEN_RETRIES', 2))
+            time.sleep(EnvironmentVariables.get("WAIT_TIME_BETWEEN_RETRIES", 2))
     return None
 
 
@@ -56,10 +56,10 @@ def process_item(item):
     try:
         scraper.open_gothamist()
         payload = item.payload
-        if not isinstance(payload, dict) or 'Name' not in payload:
+        if not isinstance(payload, dict) or "News" not in payload:
             raise ValueError("Invalid payload format: %s" % payload)
 
-        search_phrases = payload['Name']
+        search_phrases = payload["News"]
         for search_phrase in search_phrases:
             logger.info("Searching for: %s", search_phrase)
             news_data = retry_search(scraper, search_phrase)
@@ -99,9 +99,9 @@ def load_and_process_all():
             else:
                 logger.warning("No news data found for item: %s", item.id)
                 item.fail(
-                    exception_type='APPLICATION',
-                    code='NO_NEWS_DATA',
-                    message='No news data found'
+                    exception_type="APPLICATION",
+                    code="NO_NEWS_DATA",
+                    message="No news data found",
                 )
     except Exception as e:
         logger.error(f"Error processing work items: {e}")

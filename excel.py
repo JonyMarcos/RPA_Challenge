@@ -3,6 +3,7 @@ import datetime
 import openpyxl
 from openpyxl.styles import PatternFill, Border, Side, Alignment
 
+
 class ExcelWriter:
     def __init__(self, output_dir):
         self.output_dir = output_dir
@@ -25,11 +26,23 @@ class ExcelWriter:
         sheet = wb.active
 
         # Define the headers
-        headers = ["Search phrase", "Title", "Date", "Description", "Image URL", "Title Search Count", "Description Search Count", "Title Contains Money", "Description Contains Money"]
+        headers = [
+            "Search phrase",
+            "Title",
+            "Date",
+            "Description",
+            "Image URL",
+            "Title Search Count",
+            "Description Search Count",
+            "Title Contains Money",
+            "Description Contains Money",
+        ]
         sheet.append(headers)
 
         # Add color to the header
-        header_fill = PatternFill(start_color="00CCFF", end_color="00CCFF", fill_type="solid")
+        header_fill = PatternFill(
+            start_color="00CCFF", end_color="00CCFF", fill_type="solid"
+        )
         for cell in sheet[1]:
             cell.fill = header_fill
 
@@ -47,16 +60,20 @@ class ExcelWriter:
                         max_length = len(cell.value)
                 except:
                     pass
-            adjusted_width = (max_length + 2) * 1.2  # Adjusted width based on max length of data
+            adjusted_width = (
+                max_length + 2
+            ) * 1.2  # Adjusted width based on max length of data
             sheet.column_dimensions[column].width = adjusted_width
             for cell in col:
-                cell.alignment = Alignment(wrap_text=True, vertical='top')
+                cell.alignment = Alignment(wrap_text=True, vertical="top")
 
         # Set borders for all cells
-        border = Border(left=Side(border_style='thin', color='000000'),
-                        right=Side(border_style='thin', color='000000'),
-                        top=Side(border_style='thin', color='000000'),
-                        bottom=Side(border_style='thin', color='000000'))
+        border = Border(
+            left=Side(border_style="thin", color="000000"),
+            right=Side(border_style="thin", color="000000"),
+            top=Side(border_style="thin", color="000000"),
+            bottom=Side(border_style="thin", color="000000"),
+        )
         for row in sheet.iter_rows():
             for cell in row:
                 cell.border = border

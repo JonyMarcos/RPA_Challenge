@@ -3,7 +3,6 @@ import time
 import os
 import re
 import requests
-from urllib.parse import urlparse
 from robocorp import storage
 from RPA.Browser.Selenium import Selenium
 
@@ -12,7 +11,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Load environment variables
-EnvironmentVariables = storage.get_json('EnvironmentVariables')
+EnvironmentVariables = storage.get_json("EnvironmentVariables")
 
 # Current directory where the Python script is located
 CURRENT_DIRECTORY = os.path.dirname(os.path.realpath(__file__))
@@ -34,6 +33,7 @@ IMAGE = "//div[@class='simple-responsive-image-holder' and contains(@style, 'asp
 
 IMG_DIRECTORY = "./output/"
 
+
 class GothamistScraper:
     def __init__(self):
         self.browser = None
@@ -53,14 +53,11 @@ class GothamistScraper:
     def download_image(self, search_phrase, image_url):
         """Downloads and saves the image."""
         try:
-            # Extract file name and extension from image URL
-            parsed_url = urlparse(image_url)
-            image_filename = os.path.basename(parsed_url.path)
-            filename, _ = os.path.splitext(image_filename)
-
             # Build full path to save the file in the output folder
             os.makedirs(IMG_DIRECTORY, exist_ok=True)
-            output_path = os.path.join(IMG_DIRECTORY, f"img_search_{search_phrase}.webp")
+            output_path = os.path.join(
+                IMG_DIRECTORY, f"img_search_{search_phrase}.webp"
+            )
 
             # Download the image
             response = requests.get(image_url)
@@ -102,8 +99,14 @@ class GothamistScraper:
                     logger.info(f"Search for '{search_phrase}' successful.")
                     return True
                 elif retry == 3:
-                    logger.info(f"No results found for '{search_phrase}'. Taking screenshot...")
-                    self.browser.capture_page_screenshot(os.path.join(OUTPUT_DIRECTORY, f"no_results_{search_phrase}.png"))
+                    logger.info(
+                        f"No results found for '{search_phrase}'. Taking screenshot..."
+                    )
+                    self.browser.capture_page_screenshot(
+                        os.path.join(
+                            OUTPUT_DIRECTORY, f"no_results_{search_phrase}.png"
+                        )
+                    )
                     return False
                 else:
                     logger.info(f"No results found for '{search_phrase}'.")
@@ -132,12 +135,26 @@ class GothamistScraper:
         try:
             description = self.scrape_description()
             title, date, image_url = self.get_title_date_image()
-            image_path = self.download_image(search_phrase, image_url)
-            title_search_count, description_search_count = self.get_search_counts(search_phrase, title, description)
-            title_contains_money, description_contains_money = self.check_money_related(title, description)
+            self.download_image(search_phrase, image_url)
+            title_search_count, description_search_count = self.get_search_counts(
+                search_phrase, title, description
+            )
+            title_contains_money, description_contains_money = self.check_money_related(
+                title, description
+            )
 
             logger.info("News info scraped successfully.")
-            return search_phrase, title, date, description, image_url, title_search_count, description_search_count, title_contains_money, description_contains_money
+            return (
+                search_phrase,
+                title,
+                date,
+                description,
+                image_url,
+                title_search_count,
+                description_search_count,
+                title_contains_money,
+                description_contains_money,
+            )
         except Exception as e:
             logger.error(f"Error while scraping news info: {e}")
             raise
@@ -171,15 +188,23 @@ class GothamistScraper:
     def check_money_related(self, title, description):
         """Checks if title or description contains money-related keywords."""
         try:
-            money_keywords = ["\$[\d,]+(?:\.\d+)?(?:[KMB]?(?:illion|illion|thousand))?", "\$[\d,]+(?:\.\d+)?(?:[KMB]?(?:illion|illion|thousand))?", "\$[\d,]+(?:\.\d+)?(?:[KMB]?(?:illion|illion|thousand))?"]
-            title_contains_money = any(re.search(keyword, title, re.IGNORECASE) for keyword in money_keywords)
-            description_contains_money = any(re.search(keyword, description, re.IGNORECASE) for keyword in money_keywords)
-            
+            money_keywords = [
+                "\$[\d,]+(?:\.\d+)?(?:[KMB]?(?:illion|illion|thousand))?",
+                "\$[\d,]+(?:\.\d+)?(?:[KMB]?(?:illion|illion|thousand))?",
+                "\$[\d,]+(?:\.\d+)?(?:[KMB]?(?:illion|illion|thousand))?",
+            ]
+            title_contains_money = any(
+                re.search(keyword, title, re.IGNORECASE) for keyword in money_keywords
+            )
+            description_contains_money = any(
+                re.search(keyword, description, re.IGNORECASE)
+                for keyword in money_keywords
+            )
+
             title_contains_money_str = str(title_contains_money).lower()
             description_contains_money_str = str(description_contains_money).lower()
-            
+
             return title_contains_money_str, description_contains_money_str
         except Exception as e:
             logger.error(f"Error while checking money-related keywords: {e}")
             raise
-
