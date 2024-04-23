@@ -1,8 +1,8 @@
 import logging
 import time
 import os
-from gothamist import open_gothamist, search, scrape_news_info
-from excel import write_to_excel
+from gothamist import GothamistScraper
+from excel import ExcelWriter
 from robocorp import storage
 from robocorp import workitems
 from robocorp.tasks import task
@@ -21,12 +21,12 @@ EnvironmentVariables = storage.get_json('EnvironmentVariables')
 OUTPUT_DIRECTORY = os.path.join(CURRENT_DIRECTORY, "output")
 
 
-def retry_search(browser, search_phrase):
+def retry_search(scraper, search_phrase):
     """
     Retry search operation multiple times in case of failure.
 
     Args:
-        browser: WebDriver instance.
+        scraper: GothamistScraper instance.
         search_phrase: Phrase to search.
 
     Returns:
@@ -34,13 +34,12 @@ def retry_search(browser, search_phrase):
     """
     for retry in range(EnvironmentVariables.get('MAX_RETRIES', 3)):
         try:
-            if search(browser, search_phrase, retry + 1):  # Adicionando o número da tentativa
-                news_data = scrape_news_info(browser, search_phrase)
+            if scraper.search(search_phrase, retry + 1):  # Adding the retry number
+                news_data = scraper.scrape_news_info(search_phrase)
                 if news_data:
                     return news_data
         except Exception as e:
             logger.error(f"Exception caught: {e}. Retrying...")
-            browser.capture_page_screenshot(os.path.join(OUTPUT_DIRECTORY, f"error_screenshot_{search_phrase}_retry_{retry}.png"))
             # Wait before retrying
             time.sleep(EnvironmentVariables.get('WAIT_TIME_BETWEEN_RETRIES', 2))
     return None
@@ -49,36 +48,36 @@ def retry_search(browser, search_phrase):
 def process_item(item):
     """
     Process each item.
-
-    Args:
-        item: Work item to process.
-
-    Returns:
-        List of news data.
     """
     all_news_data = []
-    browser = open_gothamist()
+    scraper = GothamistScraper()
+    excel_writer = ExcelWriter(OUTPUT_DIRECTORY)
 
     try:
+        scraper.open_gothamist()
         payload = item.payload
-        if isinstance(payload, dict):  # Check if payload is a dictionary
-            search_phrases = payload.get('Name', [])
-            if isinstance(search_phrases, list):  # Check if payload['Name'] is a list
-                for search_phrase in search_phrases:
-                    logger.info("Searching for: %s", search_phrase)
-                    news_data = retry_search(browser, search_phrase)
-                    if news_data:
-                        all_news_data.append(news_data)
-            else:
-                logger.error("Invalid payload format: %s", payload)
-        else:
-            logger.error("Invalid payload format: %s", payload)
+        if not isinstance(payload, dict) or 'Name' not in payload:
+            raise ValueError("Invalid payload format: %s" % payload)
+
+        search_phrases = payload['Name']
+        for search_phrase in search_phrases:
+            logger.info("Searching for: %s", search_phrase)
+            news_data = retry_search(scraper, search_phrase)
+            if news_data:
+                all_news_data.append(news_data)
+
+        logger.info("Writing news data to Excel...")
+        excel_writer.write_to_excel(all_news_data)
+        logger.info("News data written successfully.")
+
+    except ValueError as ve:
+        logger.error(ve)
     except Exception as e:
         logger.error(f"Error processing item: {e}")
     finally:
         try:
             logger.info("Closing the browser...")
-            browser.close_all_browsers()
+            scraper.browser.close_all_browsers()
         except Exception as e:
             logger.error(f"Error closing the browser: {e}")
 
@@ -95,9 +94,6 @@ def load_and_process_all():
             all_news_data = process_item(item)
             logger.info("Received payload: %s", item.payload)
             if all_news_data:
-                logger.info("Writing news data to Excel...")
-                write_to_excel(all_news_data, OUTPUT_DIRECTORY)
-                logger.info("News data written successfully.")
                 # Mark the work item as done
                 item.done()
             else:

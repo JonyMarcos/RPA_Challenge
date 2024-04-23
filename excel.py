@@ -1,63 +1,67 @@
 import os
 import datetime
 import openpyxl
-from openpyxl.styles import PatternFill, Border, Side
+from openpyxl.styles import PatternFill, Border, Side, Alignment
 
-def get_output_filename():
-    # Generate output filename based on current date and time.
-    now = datetime.datetime.now()
-    timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")
-    filename = f"gothamist_news_data_{timestamp}.xlsx"
-    return filename
+class ExcelWriter:
+    def __init__(self, output_dir):
+        self.output_dir = output_dir
 
-def write_to_excel(data, output_dir):
-    # Write data to an Excel file.
-    filename = get_output_filename()
-    # Construct the full file path
-    output_path = os.path.join(output_dir, filename)
+    def get_output_filename(self):
+        # Generate output filename based on current date and time.
+        now = datetime.datetime.now()
+        timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")
+        filename = f"gothamist_news_data_{timestamp}.xlsx"
+        return filename
 
-    # Create a new Excel file
-    wb = openpyxl.Workbook()
-    sheet = wb.active
+    def write_to_excel(self, data):
+        # Write data to an Excel file.
+        filename = self.get_output_filename()
+        # Construct the full file path
+        output_path = os.path.join(self.output_dir, filename)
 
-    # Define the headers
-    headers = ["Search phrase", "Title", "Date", "Description", "Image URL", "Title Search Count", "Description Search Count", "Title Contains Money", "Description Contains Money"]
-    sheet.append(headers)
+        # Create a new Excel file
+        wb = openpyxl.Workbook()
+        sheet = wb.active
 
-    # Add color to the header
-    header_fill = PatternFill(start_color="00CCFF", end_color="00CCFF", fill_type="solid")
-    for cell in sheet[1]:
-        cell.fill = header_fill
+        # Define the headers
+        headers = ["Search phrase", "Title", "Date", "Description", "Image URL", "Title Search Count", "Description Search Count", "Title Contains Money", "Description Contains Money"]
+        sheet.append(headers)
 
-    # Write the data
-    for news_item in data:
-        sheet.append(news_item)
+        # Add color to the header
+        header_fill = PatternFill(start_color="00CCFF", end_color="00CCFF", fill_type="solid")
+        for cell in sheet[1]:
+            cell.fill = header_fill
 
-    # Adjust column widths and text alignment
-    for col in sheet.columns:
-        max_length = 0
-        column = col[0].column_letter  # Get the column name
-        for cell in col:
-            try:
-                if len(str(cell.value)) > max_length:
-                    max_length = len(cell.value)
-            except:
-                pass
-        adjusted_width = (max_length + 2) * 1.2  # Adjusted width based on max length of data
-        sheet.column_dimensions[column].width = adjusted_width
-        for cell in col:
-            cell.alignment = openpyxl.styles.Alignment(wrap_text=True, vertical='top')
+        # Write the data
+        for news_item in data:
+            sheet.append(news_item)
 
-    # Set borders for all cells
-    border = Border(left=Side(border_style='thin', color='000000'),
-                    right=Side(border_style='thin', color='000000'),
-                    top=Side(border_style='thin', color='000000'),
-                    bottom=Side(border_style='thin', color='000000'))
-    for row in sheet.iter_rows():
-        for cell in row:
-            cell.border = border
+        # Adjust column widths and text alignment
+        for col in sheet.columns:
+            max_length = 0
+            column = col[0].column_letter  # Get the column name
+            for cell in col:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(cell.value)
+                except:
+                    pass
+            adjusted_width = (max_length + 2) * 1.2  # Adjusted width based on max length of data
+            sheet.column_dimensions[column].width = adjusted_width
+            for cell in col:
+                cell.alignment = Alignment(wrap_text=True, vertical='top')
 
-    # Save the Excel file to the specified path
-    wb.save(output_path)
+        # Set borders for all cells
+        border = Border(left=Side(border_style='thin', color='000000'),
+                        right=Side(border_style='thin', color='000000'),
+                        top=Side(border_style='thin', color='000000'),
+                        bottom=Side(border_style='thin', color='000000'))
+        for row in sheet.iter_rows():
+            for cell in row:
+                cell.border = border
 
-    return output_path  # Return the saved file path
+        # Save the Excel file to the specified path
+        wb.save(output_path)
+
+        return output_path  # Return the saved file path
